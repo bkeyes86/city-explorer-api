@@ -7,17 +7,17 @@ const cors = require('cors');
 
 // Application Setup 
 const app = express(); //
-const PORT = process.env.PORT || 3000; //
+const PORT = process.env.PORT || 3001; //
 app.use(cors());
 
 
 // Route Definition
-app.use(errorHandler);
-app.use('*', notFoundHandler);
 app.get('/', rootHandler);
 app.get('/location', locationHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
+app.use(errorHandler);
+app.use('*', notFoundHandler);
 
 // Route handlers
 function rootHandler(request, response) {
@@ -40,6 +40,7 @@ function restaurantHandler(request, response) {
   });
   response.send(restaurantsResults)
 }
+
 
 function weatherHandler(request, response) {
   const weatherData = require('./data/weather.json');
