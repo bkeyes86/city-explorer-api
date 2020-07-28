@@ -16,7 +16,7 @@ app.use('*', notFoundHandler);
 
 
 function notFoundHandler(request, response) {
-  response.status(404).send('404 - Not Found');
+  response.status(404).send('404 - No Found');
 }
 function errorHandler(error, request, response, next) {
   response.status(500).json({error: true, message:error.message});
