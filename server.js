@@ -3,21 +3,22 @@
 // Application Dependencies
 require('dotenv').config();
 const express = require('express');
+const superagent = require('superagent');
 const cors = require('cors');
 
-// Application Setup 
+
+// Application Setup
 const app = express(); //
-const PORT = process.env.PORT || 3001; //
+const PORT = process.env.PORT || 3004; //
 app.use(cors());
-const superagent = require('superagent');
-const { query } = require('express');
+
 
 
 // Route Definition
 app.get('/', rootHandler);
 app.get('/location', locationHandler);
 app.get('/yelp', restaurantHandler);
-app.get('/weather', weatherHandler);
+// app.get('/weather', weatherHandler);
 app.use(errorHandler);
 app.use('*', notFoundHandler);
 
@@ -30,40 +31,61 @@ function locationHandler(request, response) {
   const city = request.query.city;
   const url = 'https://us1.locationiq.com/v1/search.php';
   superagent.get(url)
-  .query({
-    key: process.env.LOCATION_KEY,
-    q: city,
-    format: 'json'
-  })
-   .then(locationIQResponse => {
-    console.log(locationIQResponse);     
-     const topLocation = locationIQResponse.body[0];
-     const myLocationResponse = new Location(city, topLocation);
-     response.status(200).send(myLocationResponse);
-})
-.catch(err => {
-  console.log(err);
-  errorHandler(err, request, response);
-});
-
+    .query({
+      key: process.env.LOCATION_KEY,
+      q: city,
+      format: 'json'
+    })
+    .then(locationIQResponse => {
+      console.log(locationIQResponse);
+      const topLocation = locationIQResponse.body[0];
+      const myLocationResponse = new Location(city, topLocation);
+      response.status(200).send(myLocationResponse);
+    })
+    .catch(err => {
+      console.log(err);
+      errorHandler(err, request, response);
+    });
+}
 function restaurantHandler(request, response) {
-  const restaurantsData = require('./data/restaurants.json');
-  const arrayOfRestaurants = restaurantsData.nearby_restaurants;
-  const restaurantsResults = [];
-  arrayOfRestaurants.forEach(restaurantObj => {
-    restaurantsResults.push(new Restaurant(restaurantObj));
-  });
-  response.send(restaurantsResults)
+  const queryString = request.query;
+  console.log(queryString);
+  const lat = parseFloat(request.query.latitude);
+  const lon = parseFloat(request.query.longitude);
+  const currentPage = request.query.page;
+  const numPerPage = 4;
+  const start = ((currentPage - 1) + numPerPage + 1);
+  const url = 'https://api.yelp.com/v3/businesses/search';
+  superagent.get(url)
+    .query({
+      latitude: lat,
+      longitude: lon,
+      limit: numPerPage,
+      offset: start
+    })
+    .set('Authorization', `Bearer ${process.env.Yelp_Key}`)
+    .then(yelpResponse => {
+      const arrayOfRestaurants = yelpResponse.body.businesses;
+      const restaurantsResults = [];
+      arrayOfRestaurants.forEach(restaurantObj => {
+        restaurantsResults.push(new Restaurant(restaurantObj));
+      });
+      response.send(restaurantsResults);
+    })
+    .catch(err => {
+      console.log(err);
+      errorHandler(err, request, response);
+    });
 }
 
 
-function weatherHandler(request, response) {
-  const weatherData = require('./data/weather.json');
-  const arrayOfWeatherData = weatherData.data;
-    weatherResults.locations.map((location, index) => new Weather(location));
-  });
-  response.send(weatherResults)
-}
+// function weatherHandler(request, response) {
+//   const weatherData = require('./data/weather.json');
+//   const arrayOfWeatherData = weatherData.data;
+//     weatherResults.locations.map((location, index) => new Weather(location));
+//   });
+//   response.send(weatherResults)
+// }
 
 function notFoundHandler(request, response) {
   response.status(404).send('404 - Not Found');
@@ -80,11 +102,11 @@ function Location(city, locationData) {
   this.longitude = parseFloat(locationData.lon);
 }
 function Restaurant(obj) {
-  this.name = obj.restaurant.name;
-  this.url = obj.restaurant.url;
-  this.rating = obj.restaurant.user_rating.aggregate_rating;
-  this.price = obj.restaurant.price_range;
-  this.image_url = obj.restaurant.featured_image;
+  this.name = obj.name;
+  this.url = obj.url;
+  this.rating = obj.rating;
+  this.price = obj.price;
+  this.image_url = obj.image_url;
 }
 function Weather(conditions) {
   this.time = conditions.valid_date;
@@ -92,6 +114,4 @@ function Weather(conditions) {
 }
 
 // App listener
-app.listen(PORT,() => console.log(`Listening on port ${PORT}`)); //
-
-
+app.listen(PORT,() => console.log(`Listening on port ${PORT}`));
