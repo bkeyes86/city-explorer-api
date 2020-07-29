@@ -37,7 +37,6 @@ function locationHandler(request, response) {
       format: 'json'
     })
     .then(locationIQResponse => {
-      console.log(locationIQResponse);
       const topLocation = locationIQResponse.body[0];
       const myLocationResponse = new Location(city, topLocation);
       response.status(200).send(myLocationResponse);
@@ -80,11 +79,17 @@ function restaurantHandler(request, response) {
 
 
 // function weatherHandler(request, response) {
-//   const weatherData = require('./data/weather.json');
+//   const city = request.query.city;
+//   const url = 'https://api.weatherbit.io/v2.0/current';
+//   superagent.get(url)
+//   .query({
+//     key:
+
+//   })
 //   const arrayOfWeatherData = weatherData.data;
-//     weatherResults.locations.map((location, index) => new Weather(location));
-//   });
-//   response.send(weatherResults)
+//   weatherResults.locations.map((location, index) => new Weather(location));
+// }
+// response.send(weatherResults)
 // }
 
 function notFoundHandler(request, response) {
