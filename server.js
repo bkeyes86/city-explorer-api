@@ -9,6 +9,8 @@ const cors = require('cors');
 const app = express(); //
 const PORT = process.env.PORT || 3001; //
 app.use(cors());
+const superagent = require('superagent');
+const { query } = require('express');
 
 
 // Route Definition
@@ -26,10 +28,20 @@ function rootHandler(request, response) {
 }
 function locationHandler(request, response) {
   const city = request.query.city;
-  const locationData = require('./data/location.json');
-  const location = new Location(city, locationData)
-  response.status(200).send(location);
-}
+  const url = 'https://us1.locationiq.com/v1/search.php';
+  superagent.get(url)
+  .query({
+    key: process.env.LOCATION_KEY,
+    q: city,
+    format: 'json'
+  })
+   .then(locationIQResponse => {
+     console.log(locationIQResponse);
+})
+.catch(err => {
+  console.log(err);
+  errorHandler(err, request, response);
+});
 
 function restaurantHandler(request, response) {
   const restaurantsData = require('./data/restaurants.json');
@@ -45,9 +57,7 @@ function restaurantHandler(request, response) {
 function weatherHandler(request, response) {
   const weatherData = require('./data/weather.json');
   const arrayOfWeatherData = weatherData.data;
-  const weatherResults = [];
-  arrayOfWeatherData.forEach(location => {
-    weatherResults.push(new Weather(location));
+    weatherResults.locations.map((location, index) => new Weather(location));
   });
   response.send(weatherResults)
 }
