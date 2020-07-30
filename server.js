@@ -115,7 +115,7 @@ function trailsHandler(request, response) {
 
 }
 
-function Place(data) {
+function Places(data) {
   this.name = data.text;
   this.type = data.properties.category;
   this.address = data.place_name;
