@@ -4,15 +4,20 @@
 require('dotenv').config();
 const express = require('express');
 const superagent = require('superagent');
+const pg =require('pg');
 const cors = require('cors');
-const { response } = require('express');
+
 
 
 // Application Setup
 const app = express(); //
 const PORT = process.env.PORT || 3004; //
 app.use(cors());
-
+if(!process.env.DATABASE_URL) {
+  throw new Error('Missing database URL.');
+}
+const client = new pg.Client(process.env.DATABASE_URL);
+client.on('error', err => {throw err; });
 
 
 // Route Definition
@@ -79,14 +84,15 @@ function restaurantHandler(request, response) {
 }
 
 function trailsHandler(request, response) {
-  const lat = request.query.latitude;
-  const lng = request.query.longitude;
+ 
   const url = `https://www.hikingproject.com/data/get-trails/${queryParams.lng},${queryParams.lat}.json`;
 
   const queryParams = {
     access_token: process.env.TOKEN_KEY,
     types: 'poi',
     limit: 10,
+    const lat = request.query.latitude;
+    const lng = request.query.longitude;
   };
 
 
@@ -172,5 +178,11 @@ function Weather(conditions) {
   this.forecast = conditions.weather.description;
 }
 
-// App listener
-app.listen(PORT,() => console.log(`Listening on port ${PORT}`));
+client.connect()
+.then(() => {
+console.log('Postgres connected.');
+app.listen((PORT,() => console.log('Listening on port ${PORT}'));
+})
+.catch(err => {
+throw `Postgres error: ${err.message}`;
+});
