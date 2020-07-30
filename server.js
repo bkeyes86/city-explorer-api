@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const superagent = require('superagent');
 const cors = require('cors');
+const { response } = require('express');
 
 
 // Application Setup
@@ -18,7 +19,7 @@ app.use(cors());
 app.get('/', rootHandler);
 app.get('/location', locationHandler);
 app.get('/yelp', restaurantHandler);
-// app.get('/weather', weatherHandler);
+app.get('/weather', weatherHandler);
 app.use(errorHandler);
 app.use('*', notFoundHandler);
 
@@ -77,20 +78,73 @@ function restaurantHandler(request, response) {
     });
 }
 
+function trailsHandler(request, response) {
+  const lat = request.query.latitude;
+  const lng = request.query.longitude;
+  const url = `https://www.hikingproject.com/data/get-trails/${queryParams.lng},${queryParams.lat}.json`;
 
-// function weatherHandler(request, response) {
-//   const city = request.query.city;
-//   const url = 'https://api.weatherbit.io/v2.0/current';
-//   superagent.get(url)
-//   .query({
-//     key:
+  const queryParams = {
+    access_token: process.env.TOKEN_KEY,
+    types: 'poi',
+    limit: 10,
+  };
 
-//   })
-//   const arrayOfWeatherData = weatherData.data;
-//   weatherResults.locations.map((location, index) => new Weather(location));
-// }
-// response.send(weatherResults)
-// }
+
+  superagent.get(url)
+    .query(queryParams)
+    .then((data) => {
+      const results = data.body;
+      const places = [];
+      results.features.forEach(entry => {
+        places.push(new places(entry));
+      });
+      response.send(places);
+    })
+
+    .catch((error) => {
+      console.log('ERROR', error);
+      response.status(500).send('So sorry, something went wrong.');
+
+    });
+
+}
+
+function Place(data) {
+  this.name = data.text;
+  this.type = data.properties.category;
+  this.address = data.place_name;
+}
+
+function weatherHandler(request, response) {
+
+  const url = `https://api.weatherbit.io/v2.0/current/${queryParams.lng},${queryParams.lat}.json`;
+  const queryParams = {
+    lat: request.query.latitude,
+    lng: request.query.longitude,
+  };
+  superagent.get(url)
+    .set('user-key', process.env.WEATHER_KEY)
+    .query(queryParams)
+    .then((data) => {
+      const weatherResults = data.body;
+      weatherResults.locations.map((location) => new Weather(location));
+
+      response.send(weatherResults);
+
+    })
+    .catch((error) => {
+      console.log('ERROR', error);
+      response.status(500).send('oops, it\s not working');
+    });
+
+
+
+
+
+}
+
+
+
 
 function notFoundHandler(request, response) {
   response.status(404).send('404 - Not Found');
