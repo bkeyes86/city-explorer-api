@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const superagent = require('superagent');
 const cors = require('cors');
+const { response } = require('express');
 
 
 // Application Setup
@@ -78,19 +79,30 @@ function restaurantHandler(request, response) {
 }
 
 
-// function weatherHandler(request, response) {
-//   const city = request.query.city;
-//   const url = 'https://api.weatherbit.io/v2.0/current';
-//   superagent.get(url)
-//   .query({
-//     key:
+function weatherHandler(request, response) {
 
-//   })
-//   const arrayOfWeatherData = weatherData.data;
-//   weatherResults.locations.map((location, index) => new Weather(location));
-// }
-// response.send(weatherResults)
-// }
+  const url = 'https://api.weatherbit.io/v2.0/current';
+  const queryParams = {
+lat: request.query.latitude,
+lng: request.query.longitude,
+  };
+  superagent.get(url)
+  .set('user-key', process.env.WEATHER_KEY)
+  .query(queryParams)
+  .then(data) => {
+const results = data.body;
+const weatherData = [];
+const arrayOfWeatherData = weatherData.data;
+  weatherResults.locations.map((location, index) => new Weather(location));
+
+  };
+    }
+response.send(weatherResults);
+  })
+  .catch(() => {
+console.log('WRONG', wrong);
+response.status()
+  });
 
 function notFoundHandler(request, response) {
   response.status(404).send('404 - Not Found');
