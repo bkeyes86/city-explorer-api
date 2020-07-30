@@ -19,7 +19,7 @@ app.use(cors());
 app.get('/', rootHandler);
 app.get('/location', locationHandler);
 app.get('/yelp', restaurantHandler);
-// app.get('/weather', weatherHandler);
+app.get('/weather', weatherHandler);
 app.use(errorHandler);
 app.use('*', notFoundHandler);
 
@@ -78,31 +78,73 @@ function restaurantHandler(request, response) {
     });
 }
 
+function trailsHandler(request, response) {
+  const lat = request.query.latitude;
+  const lng = request.query.longitude;
+  const url = `https://www.hikingproject.com/data/get-trails/${queryParams.lng},${queryParams.lat}.json`;
+
+  const queryParams = {
+    access_token: process.env.TOKEN_KEY,
+    types: 'poi',
+    limit: 10,
+  };
+
+
+  superagent.get(url)
+    .query(queryParams)
+    .then((data) => {
+      const results = data.body;
+      const places = [];
+      results.features.forEach(entry => {
+        places.push(new places(entry));
+      });
+      response.send(places);
+    })
+
+    .catch((error) => {
+      console.log('ERROR', error);
+      response.status(500).send('So sorry, something went wrong.');
+
+    });
+
+}
+
+function Place(data) {
+  this.name = data.text;
+  this.type = data.properties.category;
+  this.address = data.place_name;
+}
 
 function weatherHandler(request, response) {
 
-  const url = 'https://api.weatherbit.io/v2.0/current';
+  const url = `https://api.weatherbit.io/v2.0/current/${queryParams.lng},${queryParams.lat}.json`;
   const queryParams = {
-lat: request.query.latitude,
-lng: request.query.longitude,
+    lat: request.query.latitude,
+    lng: request.query.longitude,
   };
   superagent.get(url)
-  .set('user-key', process.env.WEATHER_KEY)
-  .query(queryParams)
-  .then(data) => {
-const results = data.body;
-const weatherData = [];
-const arrayOfWeatherData = weatherData.data;
-  weatherResults.locations.map((location, index) => new Weather(location));
+    .set('user-key', process.env.WEATHER_KEY)
+    .query(queryParams)
+    .then((data) => {
+      const weatherResults = data.body;
+      weatherResults.locations.map((location) => new Weather(location));
 
-  };
-    }
-response.send(weatherResults);
-  })
-  .catch(() => {
-console.log('WRONG', wrong);
-response.status()
-  });
+      response.send(weatherResults);
+
+    })
+    .catch((error) => {
+      console.log('ERROR', error);
+      response.status(500).send('oops, it\s not working');
+    });
+
+
+
+
+
+}
+
+
+
 
 function notFoundHandler(request, response) {
   response.status(404).send('404 - Not Found');
