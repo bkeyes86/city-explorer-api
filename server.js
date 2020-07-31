@@ -3,9 +3,9 @@
 // Application Dependencies
 require('dotenv').config();
 const express = require('express');
-const superagent = require('superagent');
 const pg =require('pg');
 const cors = require('cors');
+const superagent = require('superagent');
 
 
 
@@ -25,6 +25,7 @@ app.get('/', rootHandler);
 app.get('/location', locationHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
+app.get('/trails', trailsHandler);
 app.use(errorHandler);
 app.use('*', notFoundHandler);
 
@@ -84,42 +85,32 @@ function restaurantHandler(request, response) {
 }
 
 function trailsHandler(request, response) {
- 
-  const url = `https://www.hikingproject.com/data/get-trails/${queryParams.lng},${queryParams.lat}.json`;
-
-  const queryParams = {
-    access_token: process.env.TOKEN_KEY,
-    types: 'poi',
-    limit: 10,
-    const lat = request.query.latitude;
-    const lng = request.query.longitude;
-  };
-
-
+  const latitude = parseFloat (request.query.latitude);
+  const longitude = parseFloat(request.query.longitude);
+  const url = 'https://www.hikingproject.com/data/get-trails';
   superagent.get(url)
-    .query(queryParams)
-    .then((data) => {
-      const results = data.body;
-      const places = [];
-      results.features.forEach(entry => {
-        places.push(new places(entry));
+    .query({
+      key: process.env.TRAILS_KEY,
+      lat: latitude,
+      lon: longitude,
+      maxDistance: 200
+    })
+    .then(data => {
+      const arrayOfTrailsData = data.body.trails;
+      const trailResults = [];
+      arrayOfTrailsData.forEach(trail => {
+        trailResults.push(new Trails(trail));
       });
-      response.send(places);
+      response.send(trailResults);
+
     })
 
-    .catch((error) => {
-      console.log('ERROR', error);
-      response.status(500).send('So sorry, something went wrong.');
-
-    });
-
 }
 
-function Place(data) {
-  this.name = data.text;
-  this.type = data.properties.category;
-  this.address = data.place_name;
-}
+
+
+
+
 
 function weatherHandler(request, response) {
 
@@ -140,7 +131,7 @@ function weatherHandler(request, response) {
     })
     .catch((error) => {
       console.log('ERROR', error);
-      response.status(500).send('oops, it\s not working');
+      response.status(500).send('oops, its not working');
     });
 
 
@@ -160,29 +151,42 @@ function errorHandler(error, request, response, next) {
 
 }
 
-function Location(city, locationData) {
-  this.search_query = city;
-  this.formatted_query = locationData.display_name;
-  this.latitude = parseFloat(locationData.lat);
-  this.longitude = parseFloat(locationData.lon);
+class Location {
+  constructor(city, locationData) {
+    this.search_query = city;
+    this.formatted_query = locationData.display_name;
+    this.latitude = parseFloat(locationData.lat);
+    this.longitude = parseFloat(locationData.lon);
+  }
 }
-function Restaurant(obj) {
-  this.name = obj.name;
-  this.url = obj.url;
-  this.rating = obj.rating;
-  this.price = obj.price;
-  this.image_url = obj.image_url;
+class Restaurant {
+  constructor(obj) {
+    this.name = obj.name;
+    this.url = obj.url;
+    this.rating = obj.rating;
+    this.price = obj.price;
+    this.image_url = obj.image_url;
+  }
 }
-function Weather(conditions) {
-  this.time = conditions.valid_date;
-  this.forecast = conditions.weather.description;
+class Weather {
+  constructor(conditions) {
+    this.time = conditions.valid_date;
+    this.forecast = conditions.weather.description;
+  }
 }
 
+function Trails(data) {
+  this.name = data.text;
+  this.type = data.properties.category;
+  this.address = data.trail_name;
+}
+
+
 client.connect()
-.then(() => {
-console.log('Postgres connected.');
-app.listen((PORT,() => console.log('Listening on port ${PORT}'));
-})
-.catch(err => {
-throw `Postgres error: ${err.message}`;
-});
+  .then(() => {
+    console.log('Postgres connected.');
+    app.listen(PORT,() => console.log(`Listening on port ${PORT}`));
+  })
+  .catch(err => {
+    throw `Postgres error: ${err.message}`;
+  });
