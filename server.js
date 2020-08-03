@@ -151,29 +151,27 @@ function errorHandler(error, request, response, next) {
 
 }
 
-class Location {
-  constructor(city, locationData) {
-    this.search_query = city;
-    this.formatted_query = locationData.display_name;
-    this.latitude = parseFloat(locationData.lat);
-    this.longitude = parseFloat(locationData.lon);
-  }
+
+function Location(city, locationData) {
+  this.search_query = city;
+  this.formatted_query = locationData.display_name;
+  this.latitude = parseFloat(locationData.lat);
+  this.longitude = parseFloat(locationData.lon);
 }
-class Restaurant {
-  constructor(obj) {
-    this.name = obj.name;
-    this.url = obj.url;
-    this.rating = obj.rating;
-    this.price = obj.price;
-    this.image_url = obj.image_url;
-  }
+
+function Restaurant(obj) {
+  this.name = obj.name;
+  this.url = obj.url;
+  this.rating = obj.rating;
+  this.price = obj.price;
+  this.image_url = obj.image_url;
 }
-class Weather {
-  constructor(conditions) {
-    this.time = conditions.valid_date;
-    this.forecast = conditions.weather.description;
-  }
+
+function Weather(conditions) {
+  this.time = conditions.valid_date;
+  this.forecast = conditions.weather.description;
 }
+
 
 function Trails(data) {
   this.name = data.text;
